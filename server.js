@@ -6,7 +6,6 @@ const path = require("node:path");
 const url = require("node:url");
 const cloudinary = require('cloudinary').v2;
 const formidable = require('formidable');
-const mime = require('mime-types');
 
 // Configuracion de cloudinary
 cloudinary.config({
@@ -18,7 +17,7 @@ cloudinary.config({
 //Conforme se ingrese a los archivos se va obteniendo su url... por medio del req.url
 const server = http.createServer((req, res) => {
   //Quitar los datos vinculados de las url solo para ser leidos
-  const parsedUrl = url.parse(req.url).pathname;
+  let parsedUrl = url.parse(req.url).pathname;
   console.log(parsedUrl);
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -29,107 +28,92 @@ const server = http.createServer((req, res) => {
     res.end();
     return;
   }
+
   //RECIBIR LA PETICIÓN DEL FORMULARIO QUE ENVÍA ARCHIVOS
-  if (req.method === "POST" && parsedUrl === '/api/upload-file') {
+  if (req.method === "POST") {
+
     const form = new formidable.IncomingForm();
+    
     form.parse(req, async (err, fields, files) => {
       console.log('Archivos recibidos:', files);
       if (err) {
-        console.error('Error parsing form:', err);
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Failed to parse form data.' }));
         return;
       }
+      if (parsedUrl === "/api/upload-image") {
+        const avatarFile = files.avatar;
+        if (!avatarFile) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'No avatar file provided.' }));
+          return;
+        }
 
-      //Se recibe el archivo
-      let archivoRecibido = files.archivo;
-      console.log('Archivo recibido:', archivoRecibido);
-      if (!archivoRecibido) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'No file provided.' }));
-        return;
+        const avatarPath = Array.isArray(avatarFile) ? avatarFile[0].filepath : avatarFile.filepath;
+
+        try {
+          // Carga el archivo en un url utilizando cloudinary
+          const uploadResult = await cloudinary.uploader.upload(avatarPath, {
+            folder: 'chat-avatars',
+            resource_type: 'image'
+          });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ url: uploadResult.secure_url }));
+        } catch (uploadError) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to upload image to Cloudinary.' }));
+        }
+
+
+      } else if (parsedUrl === "/api/upload-file") {
+        //Se recibe el archivo
+        let archivoRecibido = files.archivo;
+
+        if (!archivoRecibido) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'No file provided.' }));
+          return;
+        }
+        //Obtenemos la ruta temporal del archivo a subir
+        const filePath = Array.isArray(archivoRecibido) ? archivoRecibido[0].filepath : archivoRecibido.filepath; //ruta local
+
+        //Para que valide imagenes, videos, archivos genéricos
+        const filename = archivoRecibido[0].originalFilename.toLowerCase(); // nombre archivo en minúsculas para evitar problemas con mayúsculas
+        let resourceType = 'raw';
+
+        //ResourceType es para que se reconozca lo que se va a subir a Cloudinary
+        if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png') || filename.endsWith('.gif')) {
+          resourceType = 'image';
+        } else if (filename.endsWith('.mp4') || filename.endsWith('.avi') || filename.endsWith('.mov')) {
+          resourceType = 'video';
+        } else if (filename.endsWith('.pdf') || filename.endsWith('.doc') || filename.endsWith('.docx') || filename.endsWith('.txt')) {
+          resourceType = 'raw';
+        }
+
+        try {
+          //Se subirá a cloudinary -> Se obtendrá la url del archivo
+          const uploadResult = await cloudinary.uploader.upload(filePath, {
+            folder: 'chat-files',
+            resource_type: resourceType,
+            public_id: filename
+          });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          //Se envía la url del archivo de regreso
+          res.end(JSON.stringify({
+            url: uploadResult.secure_url,
+            extension: resourceType,
+          }));
+        } catch (uploadError) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Failed to upload image to Cloudinary.' }));
+        }
+
+      } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Endpoint not found.' }));
       }
-      //Obtenemos la ruta temporal del archivo a subir
-      const filePath = Array.isArray(archivoRecibido) ? archivoRecibido[0].filepath : archivoRecibido.filepath;
-      console.log("el filepath es: ", filePath);
-
-      //Para que valide imagenes, videos, archivos genéricos
-      const filename = archivoRecibido[0].originalFilename.toLowerCase(); // nombre archivo en minúsculas para evitar problemas con mayúsculas
-      let resourceType = 'raw';
-
-      //ResourceType es para que se reconozca lo que se va a subir a Cloudinary
-      if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png') || filename.endsWith('.gif')) {
-        resourceType = 'image';
-      } else if (filename.endsWith('.mp4') || filename.endsWith('.avi') || filename.endsWith('.mov')) {
-        resourceType = 'video';
-      } else if (filename.endsWith('.pdf') || filename.endsWith('.doc') || filename.endsWith('.docx') || filename.endsWith('.txt')) {
-        resourceType = 'raw';
-      }
-
-      try {
-        //Se subirá a cloudinary -> Se obtendrá la url del archivo
-        const uploadResult = await cloudinary.uploader.upload(filePath, {
-          folder: 'chat-files',
-          resource_type: resourceType,
-          public_id: filename
-        });
-
-        console.log('Cloudinary cargo correctamente:', uploadResult.secure_url);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-
-        //Se envía la url del archivo de regreso
-        res.end(JSON.stringify({
-          url: uploadResult.secure_url,
-          extension: resourceType,
-        }));
-        
-      } catch (uploadError) {
-        console.error('Error en la carga de cloudinary:', uploadError);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Failed to upload image to Cloudinary.' }));
-      }
-    });
-    return;
-  }
-
-  //Agregar un endpoint al servidor para subir archivos
-  if (req.method === 'POST' && parsedUrl === '/api/upload-image') {
-
-    const form = new formidable.IncomingForm();
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error('Error parsing form:', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Failed to parse form data.' }));
-        return;
-      }
-
-      const avatarFile = files.avatar;
-      if (!avatarFile) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'No avatar file provided.' }));
-        return;
-      }
-
-      console.log('Archivo recibido:', avatarFile);
-
-      const avatarPath = Array.isArray(avatarFile) ? avatarFile[0].filepath : avatarFile.filepath;
-
-      try {
-        // Carga el archivo en un url utilizando cloudinary
-        const uploadResult = await cloudinary.uploader.upload(avatarPath, {
-          folder: 'chat-avatars',
-          resource_type: 'image'
-        });
-        console.log('Cloudinary cargo correctamente:', uploadResult.secure_url);
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ url: uploadResult.secure_url }));
-      } catch (uploadError) {
-        console.error('Error en la carga de cloudinary:', uploadError);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Failed to upload image to Cloudinary.' }));
-      }
-    });
+      return;
+    })
     return;
   }
 
