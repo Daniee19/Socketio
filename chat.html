@@ -1,317 +1,337 @@
 <!DOCTYPE html>
 <html lang="es">
-
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Chat con Socket.IO</title>
-    <link rel="stylesheet" href="styleChat.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
-</head>
-
-<body>
+    <link rel="stylesheet" href="styleChat.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+  </head>
+  <!-- ELENA -->
+  <body>
     <div class="logo-container">
-        <img src="imagen2.png" alt="LieCake Logo">
+      <img src="imagen2.png" alt="LieCake Logo" />
     </div>
     <a href="#" class="back-button" onclick="regresar(event)">
-        <i class="fas fa-arrow-left"></i>
-        <!-- Icono de flecha hacia atrás -->
-        <span>Volver</span>
+      <i class="fas fa-arrow-left"></i>
+      <!-- Icono de flecha hacia atrás -->
+      <span>Volver</span>
     </a>
+
+    <!-- Contenedor del chat -->
     <div class="chat-container">
-        <div class="chat-header">LieCake Chat</div>
-        <div class="chat-box" id="chatBox">
-            <ul id="mensajes"></ul>
-            <div id="escribiendo" class="typing-indicator" style="color: gray; font-style: italic; margin: 5px 0;">
-            </div>
+      <div class="chat-header">LieCake Chat</div>
+      <div class="chat-box" id="chatBox">
+        <ul id="mensajes"></ul>
+        <div
+          id="escribiendo"
+          class="typing-indicator"
+          style="color: gray; font-style: italic; margin: 5px 0"></div>
+      </div>
+      <!-- Opciones para envio de mensaje -->
+      <div class="display:flex; flex-direction:column;">
+        <div class="chat-input">
+          <input
+            type="text"
+            id="mensaje"
+            placeholder="Escribe un mensaje..."
+            autocomplete="off" />
+          <button id="btnEmoji">😀</button>
+          <button id="btnEnviar">Enviar</button>
         </div>
-        <div class="display:flex; flex-direction:column;">
-            <div class="chat-input">
-                <input type="text" id="mensaje" placeholder="Escribe un mensaje..." autocomplete="off">
-                <button id="btnEmoji">😀</button>
-                <button id="btnEnviar">Enviar</button>
-            </div>
+      </div>
+      <!-- Opciones para seleccionar archivos -->
+      <div class="archivo">
+        <label for="archivoFile" class="botonArchivo">
+          Seleccionar Archivo
+        </label>
+        <div>
+          <input id="archivoFile" type="file" />
+          <span id="nombre-archivo">Ningún archivo seleccionado</span>
         </div>
-        <div class="archivo">
-            <label for="archivoFile" class="botonArchivo">
-                Seleccionar Archivo
-            </label>
-            <input id="archivoFile" type="file">
-            <span id="nombre-archivo">Ningún archivo seleccionado</span>
-        </div>
+      </div>
     </div>
-    <emoji-picker id="emojiPicker" style="display:none; position: absolute; bottom: 120px; right: 30px;"></emoji-picker>
-    </div>
+    <emoji-picker
+      id="emojiPicker"
+      style="
+        display: none;
+        position: absolute;
+        bottom: 120px;
+        right: 30px;
+      "></emoji-picker>
 
     <!-- script para mostrar el nombre del archivo -->
-
     <script>
-        const input = document.getElementById('archivoFile');
-        const nombreArchivo = document.getElementById('nombre-archivo');
+      const input = document.getElementById("archivoFile");
+      const nombreArchivo = document.getElementById("nombre-archivo");
 
-        input.addEventListener('change', () => {
-            if (input.files.length > 0) {
-                nombreArchivo.textContent = "Archivo: " + input.files[0].name;
-            } else {
-                nombreArchivo.textContent = "Ningún archivo seleccionado";
-            }
-        });
+      input.addEventListener("change", () => {
+        if (input.files.length > 0) {
+          nombreArchivo.textContent = "Archivo: " + input.files[0].name;
+        } else {
+          nombreArchivo.textContent = "Ningún archivo seleccionado";
+        }
+      });
     </script>
 
     <!-- IMPORTA SOCKET.IO DESPUÉS DEL BODY -->
     <script src="/socket.io/socket.io.js"></script>
-
     <script>
-        // let archivo_seleccionado = null;
-        // //Guardar el archivo cuando se elige
-        // document.getElementById("archivoFile").addEventListener("change", function (e) {
-        //     archivo_seleccionado = e.target.files[0];
-        // });
+      function regresar(event) {
+        event.preventDefault(); // Evita el comportamiento por defecto del enlace
+        localStorage.removeItem("nombre"); // Limpia el nombre del localStorage
+        localStorage.removeItem("avatar"); // Limpia el avatar del localStorage
+        window.location.href = "usuario.html"; // Redirige a usuario.html
+      }
 
+      //Todo desde la vista
+      const params = new URLSearchParams(window.location.search);
+      const nombre = params.get("input_nombre");
+      const socket = io();
 
+      // Registrarse al servidor-agregado ultimo
+      socket.emit("registrar usuario", nombre);
 
-        function regresar(event) {
-            event.preventDefault(); // Evita el comportamiento por defecto del enlace
-            localStorage.removeItem("nombre"); // Limpia el nombre del localStorage
-            localStorage.removeItem("avatar"); // Limpia el avatar del localStorage
-            window.location.href = "usuario.html"; // Redirige a usuario.html
+      //Recibir la información del archivo a subir al chat, escucha el evento "archivo"
+      socket.on("archivo", function (data) {
+        if (data) {
+          let li = document.createElement("li");
+          console.log("Extension es: ", data.extension);
+          if (data.extension === "image") {
+            li = document.createElement("li");
+            const img = document.createElement("img");
+            img.src = data.url;
+            img.alt = "Imagen";
+            img.style.maxWidth = "200px";
+            li.appendChild(img);
+          } else if (data.extension === "video") {
+            li = document.createElement("li");
+            const video = document.createElement("video");
+            video.src = data.url;
+            video.controls = true;
+            video.style.maxWidth = "300px";
+            li.appendChild(video);
+          } else if (data.extension === "raw") {
+            li = document.createElement("li");
+            const a = document.createElement("a");
+            a.href = data.url;
+            a.textContent = "Descargar documento";
+
+            li.appendChild(a);
+          }
+
+          //Mostrar en el chat
+          document.getElementById("mensajes").appendChild(li);
+        }
+      });
+
+      // Mostrar mensajes entrantes escuchando el evento "chat message"
+      socket.on("chat message", function (msg) {
+        // msg es un string JSON, convierte a objeto
+        let data;
+        try {
+          data = JSON.parse(msg);
+        } catch {
+          // Compatibilidad con mensajes antiguos
+          const partes = msg.split(":");
+          data = {
+            nombre: partes[0],
+            mensaje: partes.slice(1).join(":").trim(),
+            avatar: "",
+          };
         }
 
-        //Todo desde la vista
-        const params = new URLSearchParams(window.location.search);
-        const nombre = params.get("input_nombre")
-        const socket = io();
+        // Crea los elementos para mostrar el mensaje
+        const item = document.createElement("li");
+        const div = document.createElement("div");
+        const container_message = document.createElement("div");
+        //const span = document.createElement('span');
+        const mensajeContenido = document.createElement("div");
+        const horaElemento = document.createElement("div");
 
-        // Registrarse al servidor-agregado ultimo
-        socket.emit("registrar usuario", nombre);
+        const avatarLocal = localStorage.getItem("avatar");
 
-        //Recibir la información del archivo a subir al chat
-        socket.on('archivo', function (data) {
+        const avatarImg = document.createElement("img");
+        avatarImg.src =
+          avatarLocal ||
+          "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.nombre);
+        avatarImg.alt = "avatar";
+        avatarImg.style.width = "32px";
+        avatarImg.style.height = "32px";
+        avatarImg.style.borderRadius = "50%";
+        avatarImg.style.objectFit = "cover";
 
-            if (data) {
-                let li = document.createElement('li');
-                console.log("Extension es: ", data.extension);
-                if (data.extension === "image") {
-                    li = document.createElement('li');
-                    const img = document.createElement('img');
-                    img.src = data.url;
-                    img.alt = "Imagen";
-                    img.style.maxWidth = '200px';
-                    li.appendChild(img);
-                }
-                else if (data.extension === "video") {
-                    li = document.createElement('li');
-                    const video = document.createElement('video');
-                    video.src = data.url;
-                    video.controls = true;
-                    video.style.maxWidth = '300px';
-                    li.appendChild(video);
-                }
-                else if (data.extension === "raw") {
-                    li = document.createElement('li');
-                    const a = document.createElement('a');
-                    a.href = data.url;
-                    a.textContent = "Descargar documento";
+        // Verifica si el mensaje es del usuario actual y asigna las clases correspondientes
+        const esUsuario = data.nombre === nombre;
+        div.className = esUsuario ? "user" : "other";
+        mensajeContenido.className = "mensaje-contenido";
+        horaElemento.className = "mensaje-hora";
+        mensajeContenido.textContent = esUsuario
+        ? "Tu: " + data.mensaje
+        : data.nombre + ": " + data.mensaje;
+        horaElemento.textContent = data.hora || "??:??";
 
-                    li.appendChild(a);
-                }
+        // Si es del usuario, agrega la clase container-message y organiza los elementos de manera diferente
+        if (esUsuario) {
+            container_message.className = "container-message";
+            container_message.appendChild(avatarImg);
+            container_message.appendChild(mensajeContenido);
+            div.appendChild(container_message);
+            div.appendChild(horaElemento);
+        } else {
+            div.appendChild(avatarImg);
+            div.appendChild(mensajeContenido);
+            div.appendChild(horaElemento);
+        }
+        document.getElementById("mensajes").appendChild(item).appendChild(div);
+      });
 
-                //Mostrar en el chat
-                document.getElementById("mensajes").appendChild(li);
-            }
-        });
-
-        // Mostrar mensajes entrantes
-        socket.on('chat message', function (msg) {
-            // msg es un string JSON, conviértelo a objeto
-            let data;
+      // Funcion asincrónica para enviar mensajes y archivos, quiere decir que esta función puede esperar a que se completen ciertas operaciones antes de continuar, como la lectura de archivos o la respuesta del servidor.
+      async function enviar() {
+        // Verifica si hay algun archivo seleccionado
+        let archivo_file = document.getElementById("archivoFile").files[0];
+        console.log("El archivo_file es: ", archivo_file);
+        if (archivo_file) {
+          const reader = new FileReader();
+          reader.onload = async function (e) {
             try {
-                data = JSON.parse(msg);
-            } catch {
-                // Compatibilidad con mensajes antiguos
-                const partes = msg.split(':');
-                data = {
-                    nombre: partes[0],
-                    mensaje: partes.slice(1).join(':').trim(),
-                    avatar: ""
-                };
-            }
+              const contenido = e.target.result.trim();
 
-            const item = document.createElement('li');
-            const div = document.createElement('div');
-            const container_message = document.createElement('div');
-            //const span = document.createElement('span');
-            const mensajeContenido = document.createElement('div');
-            const horaElemento = document.createElement('div');
+              if (contenido.length === 0) {
+                return alert("No se puede enviar archivos vacíos");
+              }
 
-            const avatarLocal = localStorage.getItem("avatar");
+              //El contenido si o si debe de tener contenido antes de empezar
+              if (contenido.length !== 0) {
+                const formData = new FormData();
+                formData.append("archivo", archivo_file);
+                const response = await fetch("/api/upload-file", {
+                  method: "POST",
+                  body: formData,
+                });
+                console.log("Status:", response.status);
 
-            const avatarImg = document.createElement('img');
-            avatarImg.src = avatarLocal || "https://ui-avatars.com/api/?name=" + encodeURIComponent(data.nombre);
-            avatarImg.alt = "avatar";
-            avatarImg.style.width = "32px";
-            avatarImg.style.height = "32px";
-            avatarImg.style.borderRadius = "50%";
-            avatarImg.style.objectFit = "cover";
-
-            if (data.nombre === nombre) {
-                div.className = 'user';
-                container_message.className = 'container-message';
-                container_message.appendChild(avatarImg);
-                container_message.appendChild(mensajeContenido);
-                div.appendChild(container_message);
-                mensajeContenido.className = 'mensaje-contenido';
-                mensajeContenido.textContent = "Tu: " + data.mensaje;
-                horaElemento.className = 'mensaje-hora';
-                horaElemento.textContent = data.hora || "??:??";
-                div.appendChild(horaElemento);
-
-            } else {
-                div.className = 'other';
-                div.appendChild(avatarImg);
-                mensajeContenido.className = 'mensaje-contenido';
-                mensajeContenido.textContent = data.nombre + ": " + data.mensaje;
-                horaElemento.className = 'mensaje-hora';
-                horaElemento.textContent = data.hora || "??:??";
-                div.appendChild(mensajeContenido);
-                div.appendChild(horaElemento);
-
-            }
-            document.getElementById('mensajes').appendChild(item).appendChild(div);
-        });
-
-        async function enviar() {
-            let archivo_file = document.getElementById("archivoFile").files[0];
-            console.log("El archivo_file es: ", archivo_file);
-            if (archivo_file) {
-                const reader = new FileReader();
-                reader.onload = async function (e) {
-                    try {
-                        const contenido = e.target.result.trim();
-
-                        if (contenido.length === 0) {
-                            return alert("No se puede enviar archivos vacíos");
-                        }
-
-                        //El contenido si o si debe de tener contenido antes de empezar
-                        if (contenido.length !== 0) {
-
-                            const formData = new FormData();
-                            formData.append("archivo", archivo_file);
-                            const response = await fetch("/api/upload-file", {
-                                method: 'POST',
-                                body: formData,
-                            });
-                            console.log("Status:", response.status);
-
-                            if (!response.ok) {
-                                const errorText = await response.text();
-                                throw new Error(
-                                    `Error en la subida: ${response.status} - ${errorText}`
-                                );
-                            }
-
-                            const resultado = await response.json();
-                            const urlCloudinary = resultado.url;
-                            console.log(urlCloudinary);
-
-                            socket.emit("archivo", {
-                                url: urlCloudinary,
-                                extension: resultado.extension,
-                                nombre: archivo_file.name
-                            });
-                        }
-                    } catch (error) {
-                        console.error("Error al subir el archivo:", error);
-                        alert(
-                            "Hubo un error al subir el archivo. Inténtalo de nuevo. Detalle: " +
-                            error.message
-                        );
-                        return;
-                    }
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(
+                    `Error en la subida: ${response.status} - ${errorText}`
+                  );
                 }
-                reader.readAsText(archivo_file);
-                document.getElementById("archivoFile").value = "";
-            }
 
-            const input = document.getElementById('mensaje');
-            const mensaje = input.value.trim();
-            const avatar = localStorage.getItem("avatar") || ""; // Usa tu avatar o vacío
-            if (mensaje !== '') {
-                // Agrega la hora al mensaje
-                const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                // Envia un objeto con nombre, mensaje y avatar
-                socket.emit('chat message', JSON.stringify({
-                    nombre: nombre,
-                    mensaje: mensaje,
-                    avatar: avatar,
-                    hora: hora
-                }));
-                input.value = '';
+                const resultado = await response.json();
+                const urlCloudinary = resultado.url;
+                console.log(urlCloudinary);
+
+                socket.emit("archivo", {
+                  url: urlCloudinary,
+                  extension: resultado.extension,
+                  nombre: archivo_file.name,
+                });
+              }
+            } catch (error) {
+              console.error("Error al subir el archivo:", error);
+              alert(
+                "Hubo un error al subir el archivo. Inténtalo de nuevo. Detalle: " +
+                  error.message
+              );
+              return;
             }
+          };
+          reader.readAsText(archivo_file);
+          document.getElementById("archivoFile").value = "";
         }
 
-        document.getElementById('btnEnviar').addEventListener('click', enviar);
-        // Envío con tecla Enter
-        document.getElementById('mensaje').addEventListener('keypress', function (event) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Evita saltos de línea
-                enviar(); // Llama a la función de envío
-            }
-            document.getElementById('mensaje').addEventListener('input', () => {
-                socket.emit('escribiendo', nombre);
-            });
-        });
-
-
-        // Mostrar notificación de conexión/desconexión
-        function mostrarNotificacion(texto) {
-            const chatBox = document.getElementById('mensajes');
-            const li = document.createElement('li');
-            li.className = 'notificacion';
-            li.textContent = texto;
-            chatBox.appendChild(li);
-            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
+        // Obtiene el mensaje del input y lo emite al servidor con el evento "chat message"
+        const input = document.getElementById("mensaje");
+        const mensaje = input.value.trim();
+        const avatar = localStorage.getItem("avatar") || ""; // Usa tu avatar o vacío
+        // Verifica que el mensaje no esté vacío antes de enviarlo
+        if (mensaje !== "") {
+          // Agrega la hora al mensaje
+          const hora = new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          // Envia un objeto con nombre, mensaje y avatar
+          socket.emit(
+            "chat message",
+            JSON.stringify({
+              nombre: nombre,
+              mensaje: mensaje,
+              avatar: avatar,
+              hora: hora,
+            })
+          );
+          input.value = "";
         }
+      }
 
-        socket.on('usuario conectado', function (texto) {
-            mostrarNotificacion(texto);
+      // Se agrega el evento de clic al botón de enviar
+      document.getElementById("btnEnviar").addEventListener("click", enviar);
+      // --------------------------------------------------------------------------------------------------
+      // Envío con tecla Enter
+      document
+        .getElementById("mensaje")
+        .addEventListener("keypress", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault(); // Evita saltos de línea
+            enviar(); // Llama a la función de envío
+          }
+          document.getElementById("mensaje").addEventListener("input", () => {
+            socket.emit("escribiendo", nombre);
+          });
         });
 
-        socket.on('usuario desconectado', function (texto) {
-            mostrarNotificacion(texto);
-        });
+      // Mostrar notificación de conexión/desconexión
+      function mostrarNotificacion(texto) {
+        const chatBox = document.getElementById("mensajes");
+        const li = document.createElement("li");
+        li.className = "notificacion";
+        li.textContent = texto;
+        chatBox.appendChild(li);
+        document.getElementById("chatBox").scrollTop =
+          document.getElementById("chatBox").scrollHeight;
+      }
 
-        socket.on('mostrar escribiendo', function (nombreRemoto) {
-            if (nombreRemoto !== nombre) {
-                const escribirDiv = document.getElementById('escribiendo');
-                escribirDiv.textContent = `${nombreRemoto} está escribiendo...`;
+      socket.on("usuario conectado", function (texto) {
+        mostrarNotificacion(texto);
+      });
 
-                clearTimeout(window.escribiendoTimeout);
-                window.escribiendoTimeout = setTimeout(() => {
-                    escribirDiv.textContent = '';
-                }, 2000);
-            }
-        });
-        const btnEmoji = document.getElementById('btnEmoji');
-        const emojiPicker = document.getElementById('emojiPicker');
-        const inputMensaje = document.getElementById('mensaje');
+      socket.on("usuario desconectado", function (texto) {
+        mostrarNotificacion(texto);
+      });
 
-        // Alternar el panel de emojis
-        btnEmoji.addEventListener('click', () => {
-            emojiPicker.style.display = emojiPicker.style.display === 'none' ? 'block' : 'none';
-        });
+      socket.on("mostrar escribiendo", function (nombreRemoto) {
+        if (nombreRemoto !== nombre) {
+          const escribirDiv = document.getElementById("escribiendo");
+          escribirDiv.textContent = `${nombreRemoto} está escribiendo...`;
 
-        // Insertar emoji al input
-        emojiPicker.addEventListener('emoji-click', (event) => {
-            const emoji = event.detail.unicode;
-            inputMensaje.value += emoji;
-            inputMensaje.focus();
-        });
+          clearTimeout(window.escribiendoTimeout);
+          window.escribiendoTimeout = setTimeout(() => {
+            escribirDiv.textContent = "";
+          }, 2000);
+        }
+      });
+      const btnEmoji = document.getElementById("btnEmoji");
+      const emojiPicker = document.getElementById("emojiPicker");
+      const inputMensaje = document.getElementById("mensaje");
 
+      // Alternar el panel de emojis
+      btnEmoji.addEventListener("click", () => {
+        emojiPicker.style.display =
+          emojiPicker.style.display === "none" ? "block" : "none";
+      });
+
+      // Insertar emoji al input
+      emojiPicker.addEventListener("emoji-click", (event) => {
+        const emoji = event.detail.unicode;
+        inputMensaje.value += emoji;
+        inputMensaje.focus();
+      });
     </script>
-
-
-</body>
-
+  </body>
 </html>
