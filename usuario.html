@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat Lan</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="styleUsuario.css" />
+</head>
+
+<body>
+  <div class="logo-container">
+    <img src="imagen2.png" alt="LieCake Logo" />
+  </div>
+  <div class="wrapper">
+    <h2>¿Conversamos?</h2>
+    <div class="input-field">
+      <input type="text" id="nombre" required placeholder=" " />
+      <label>Empecemos...</label>
+    </div>
+    <br />
+    <div class="label-file">
+      <label for="archivo">Subir Avatar</label>
+    </div>
+    <div class="input-field">
+      <input type="file" id="archivo" accept=".jpg, .png" />
+    </div>
+    <button onclick="enviar_nombre()" type="submit">Iniciar Chat</button>
+  </div>
+</body>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const nombre = localStorage.getItem("nombre");
+    const avatar = localStorage.getItem("avatar");
+
+    if (nombre && avatar) {
+      // Si ya hay un nombre y avatar guardados, redirige al chat
+      window.location.href =
+        "chat.html?input_nombre=" + encodeURIComponent(nombre);
+    } else {
+      // Si no hay datos guardados, limpia el localStorage
+      localStorage.removeItem("nombre");
+      localStorage.removeItem("avatar");
+    }
+  });
+
+  async function enviar_nombre() {
+    let nombre = document.getElementById("nombre").value.trim();
+    let archivo = document.getElementById("archivo").files[0];
+
+    localStorage.setItem("nombre", nombre);
+
+    if (archivo) {
+      const formData = new FormData();
+      formData.append("avatar", archivo);
+
+      console.log("Subiendo avatar:", archivo.name);
+
+      try {
+        const response = await fetch("/api/upload-image", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Error en la subida: ${response.status} - ${errorText}`
+          );
+        }
+
+        const data = await response.json();
+        avatarUrl = data.url;
+        console.log("Avatar subido a Cloudinary:", avatarUrl);
+
+        //Guarda localmente la url
+        localStorage.setItem("avatar", avatarUrl);
+        window.location.href =
+          "chat.html?input_nombre=" + encodeURIComponent(nombre);
+      } catch (error) {
+        console.error("Error al subir el avatar:", error);
+        alert(
+          "Hubo un error al subir la imagen. Inténtalo de nuevo. Detalle: " +
+          error.message
+        );
+        return;
+      }
+    } else {
+      localStorage.removeItem("avatar");
+      //Si no hay archivo solo redirige
+      window.location.href =
+        "chat.html?input_nombre=" + encodeURIComponent(nombre);
+    }
+  }
+</script>
+
+</html>
