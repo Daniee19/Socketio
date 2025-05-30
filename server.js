@@ -29,6 +29,7 @@ const server = http.createServer((req, res) => {
     res.end();
     return;
   }
+  //RECIBIR LA PETICIÓN DEL FORMULARIO QUE ENVÍA ARCHIVOS
   if (req.method === "POST" && parsedUrl === '/api/upload-file') {
     const form = new formidable.IncomingForm();
     form.parse(req, async (err, fields, files) => {
@@ -55,7 +56,7 @@ const server = http.createServer((req, res) => {
       //Para que valide imagenes, videos, archivos genéricos
       const filename = archivoRecibido[0].originalFilename.toLowerCase(); // nombre archivo en minúsculas para evitar problemas con mayúsculas
       let resourceType = 'raw';
-      
+
       //ResourceType es para que se reconozca lo que se va a subir a Cloudinary
       if (filename.endsWith('.jpg') || filename.endsWith('.jpeg') || filename.endsWith('.png') || filename.endsWith('.gif')) {
         resourceType = 'image';
@@ -66,20 +67,22 @@ const server = http.createServer((req, res) => {
       }
 
       try {
-        //Se subirá a cloudinary
+        //Se subirá a cloudinary -> Se obtendrá la url del archivo
         const uploadResult = await cloudinary.uploader.upload(filePath, {
           folder: 'chat-files',
           resource_type: resourceType,
           public_id: filename
         });
+
         console.log('Cloudinary cargo correctamente:', uploadResult.secure_url);
         res.writeHead(200, { 'Content-Type': 'application/json' });
 
-        //Se envía la url del archivo
+        //Se envía la url del archivo de regreso
         res.end(JSON.stringify({
           url: uploadResult.secure_url,
           extension: resourceType,
         }));
+        
       } catch (uploadError) {
         console.error('Error en la carga de cloudinary:', uploadError);
         res.writeHead(500, { 'Content-Type': 'application/json' });

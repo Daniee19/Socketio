@@ -39,9 +39,12 @@
             <input id="archivoFile" type="file">
             <span id="nombre-archivo">Ningún archivo seleccionado</span>
         </div>
+        <div>
+            <emoji-picker id="emojiPicker"
+                style="display:none; position: absolute; bottom: 120px; right: 30px;"></emoji-picker>
+        </div>
     </div>
-    <emoji-picker id="emojiPicker" style="display:none; position: absolute; bottom: 120px; right: 30px;"></emoji-picker>
-    </div>
+
 
     <!-- script para mostrar el nombre del archivo -->
 
@@ -62,14 +65,6 @@
     <script src="/socket.io/socket.io.js"></script>
 
     <script>
-        // let archivo_seleccionado = null;
-        // //Guardar el archivo cuando se elige
-        // document.getElementById("archivoFile").addEventListener("change", function (e) {
-        //     archivo_seleccionado = e.target.files[0];
-        // });
-
-
-
         function regresar(event) {
             event.preventDefault(); // Evita el comportamiento por defecto del enlace
             localStorage.removeItem("nombre"); // Limpia el nombre del localStorage
