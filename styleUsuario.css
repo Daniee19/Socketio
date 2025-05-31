@@ -83,13 +83,13 @@ h2 {
   transition: 0.15s ease;
 }
 
-label{
+label {
   color: #ffffff;
   font-size: 16px;
   text-align: right;
 }
 
-.label-file{
+.label-file {
   display: flex;
   justify-content: start;
 }
