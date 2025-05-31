@@ -10,20 +10,25 @@
 </head>
 
 <body>
+  <!-- Contenedor del logo -->
   <div class="logo-container">
     <img src="imagen2.png" alt="LieCake Logo" />
   </div>
+  <!-- Contenedor del formulario -->
   <div class="wrapper">
     <h2>¿Conversamos?</h2>
+    <!-- Contenedor de los campos de texto y Labels indentificadores -->
     <div class="input-field">
       <input type="text" id="nombre" required placeholder=" " />
       <label>Empecemos...</label>
     </div>
     <br />
+    <!-- Ingreso de imagen para avatar -->
     <div class="label-file">
       <label for="archivo">Subir Avatar</label>
     </div>
     <div class="input-field">
+      <!-- Solo permite archivos .jpg y .png -->
       <input type="file" id="archivo" accept=".jpg, .png" />
     </div>
     <button class="btn_enviar_nombre" onclick="enviar_nombre()" type="submit">Iniciar Chat</button>
@@ -31,6 +36,7 @@
 </body>
 
 <script>
+  //Sacrip para subir el nombre y el avatar del usuario
   document.addEventListener("DOMContentLoaded", function () {
     const nombre = localStorage.getItem("nombre");
     const avatar = localStorage.getItem("avatar");
@@ -51,10 +57,12 @@
     //Se desactiva el boton para evitar enviar flujos repetidos
     btn.disabled = true;
     let nombre = document.getElementById("nombre").value.trim();
-    let archivo = document.getElementById("archivo").files[0]; //Obtenemos el formato de un archivo
+    let archivo = document.getElementById("archivo").files[0];
+    //Obtenemos el formato de un archivo
     console.log("El archivo es: ", archivo);
     localStorage.setItem("nombre", nombre);
 
+    //Aquí el FormData---
     if (archivo) {
       const formData = new FormData();
       //Se agrega el archivo con la clave avatar
@@ -62,7 +70,7 @@
       console.log("Subiendo avatar:", archivo.name);
 
       try {
-
+        //Aquí el fetch
         const response = await fetch("/api/upload-image", {
           method: "POST",
           body: formData,
