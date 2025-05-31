@@ -1,0 +1,232 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: url("imagen3.png") no-repeat center center fixed;
+  background-size: cover;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.logo-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+}
+
+.logo-container img {
+  width: 120px;
+  /* Ajusta según el tamaño que necesites */
+  height: auto;
+}
+
+.back-button {
+  position: absolute;
+  top: 20%;
+  left: 30px;
+  background-color: white;
+  color: black;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.chat-container {
+  background-color: rgba(30, 30, 30, 0.85);
+  /* semitransparente */
+  backdrop-filter: blur(3px);
+  /* desenfoca fondo detrás */
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-header {
+  background-color: #2a2a2a;
+  padding: 15px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 18px;
+  border-bottom: 1px solid #444;
+}
+
+.chat-box {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 15px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.user {
+  background-color: #4caf50;
+}
+
+.other {
+  background-color: #333;
+}
+
+.chat-input {
+  display: flex;
+  border-top: 1px solid #444;
+  background-color: #2a2a2a;
+  padding: 10px;
+  gap: 10px;
+  align-items: center;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 20px;
+  background-color: #333;
+  color: white;
+  outline: none;
+}
+
+.chat-input button {
+  background-color: #4caf50;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 20px;
+  color: white;
+  cursor: pointer;
+}
+
+/* CSS de seleccionar archivo*/
+input[type="file"] {
+  display: none;
+}
+
+.archivo {
+  background-color: #2a2a2a;
+  padding: 10px 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.botonArchivo {
+  display: inline-block;
+  padding: 5px 10px;
+  background-color: #4caf50;
+  color: #333;
+  font-family: sans-serif;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.botonArchivo:hover {
+  background-color: #388a3b;
+}
+
+/* CSS del nombre del archivo seleccionado*/
+#nombre-archivo {
+  display: inline-block;
+  font-family: sans-serif;
+  color: #333;
+  background-color: #4caf50;
+  padding: 5px 10px;
+  border: 1px solid #388a3b;
+  border-radius: 5px;
+  min-width: 200px;
+  max-width: 300px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+ul {
+  margin-right: 0px;
+  padding-inline-start: 0px;
+
+}
+
+ul li {
+  width: 100%;
+  list-style: none;
+  display: flex;
+  align-items: end;
+}
+
+ul li:has(.user) {
+  justify-content: end;
+}
+
+ul li:has(.other) {
+  justify-content: start;
+}
+
+ul li>div {
+  margin-bottom: 7px;
+  padding: 10px;
+  border-radius: 20px;
+  word-wrap: break-word;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.connection-status {
+  font-weight: bold;
+  margin: 5px 0;
+  padding: 4px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Estilo de notificaciones */
+.notificacion {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  font-size: 0.9em;
+  margin: 10px 0;
+  list-style: none;
+}
+
+.estado {
+  text-align: center;
+  font-style: italic;
+  color: gray;
+  margin: 10px 0;
+}
+
+.mensaje-hora {
+  font-size: 0.75em;
+  color: rgb(39, 39, 39);
+}
+
+.container-message {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chat-box {
+  font-family: 'Segoe UI', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+}
