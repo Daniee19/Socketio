@@ -1,11 +1,12 @@
 // server.js
+//Modulo http permite crear un servidor web básico
 const http = require('node:http');
-const { Server } = require('socket.io');
-const fs = require('node:fs');
-const path = require("node:path");
-const url = require("node:url");
-const cloudinary = require('cloudinary').v2;
-const formidable = require('formidable');
+const { Server } = require('socket.io'); //Librería socket.io para comunicación en tiempo real al servidor
+const fs = require('node:fs'); //Leer y escribir archivos
+const path = require("node:path"); //Unir y resolver rutas de archivos
+const url = require("node:url"); //Extraer partes del url
+const cloudinary = require('cloudinary').v2; //Subir imágenes desde el backend a Cloudinary y obtener una URL pública.
+const formidable = require('formidable'); //Procesar formularios con archivos
 
 // Configuracion de cloudinary
 cloudinary.config({
@@ -14,35 +15,40 @@ cloudinary.config({
   api_secret: 'ha6pyCh7sLx3SwwZYymRY062sAg'
 });
 
+//Se crea un servidor http
 //Conforme se ingrese a los archivos se va obteniendo su url... por medio del req.url
 const server = http.createServer((req, res) => {
   //Quitar los datos vinculados de las url solo para ser leidos
-  let parsedUrl = url.parse(req.url).pathname;
-  console.log(parsedUrl);
-  if (req.method === 'OPTIONS') {
+
+  let parsedUrl = url.parse(req.url).pathname; //Se obtiene la ruta sin parámetros
+
+  if (req.method === 'OPTIONS') { //Es necesario para que las peticiones fetch no sean bloqueadas, debido al CORS
     res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
+      'Access-Control-Allow-Origin': '*', //Permitir el acceso desde cualquier dominio
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS', //Usar esos métodos
+      'Access-Control-Allow-Headers': 'Content-Type' //Permitir cabeceras personalizadas
     });
     res.end();
     return;
   }
 
-  //RECIBIR LA PETICIÓN DEL FORMULARIO QUE ENVÍA ARCHIVOS
   if (req.method === "POST") {
 
     const form = new formidable.IncomingForm();
-    
+
+    //Se encarga de leer y procesar lo enviado por el formulario
+    //El form.parse hace que files tenga un formato diferente para la información del archivo
     form.parse(req, async (err, fields, files) => {
-      console.log('Archivos recibidos:', files);
+      console.log('Archivos recibidos:', files); //Imagen de inicio (avatar) //Archivos PDF, imagen, etc
       if (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Failed to parse form data.' }));
         return;
       }
+      //RECIBIR LA PETICIÓN DEL FETCH QUE ENVÍA IMÁGENES
       if (parsedUrl === "/api/upload-image") {
         const avatarFile = files.avatar;
+        console.log("El avatar file es:", avatarFile);
         if (!avatarFile) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'No avatar file provided.' }));
@@ -50,7 +56,7 @@ const server = http.createServer((req, res) => {
         }
 
         const avatarPath = Array.isArray(avatarFile) ? avatarFile[0].filepath : avatarFile.filepath;
-
+        console.log("El avatarPath es: ", avatarPath); //Ruta temporal del dispositivo
         try {
           // Carga el archivo en un url utilizando cloudinary
           const uploadResult = await cloudinary.uploader.upload(avatarPath, {
@@ -64,7 +70,6 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ error: 'Failed to upload image to Cloudinary.' }));
         }
 
-
       } else if (parsedUrl === "/api/upload-file") {
         //Se recibe el archivo
         let archivoRecibido = files.archivo;
@@ -77,7 +82,7 @@ const server = http.createServer((req, res) => {
         //Obtenemos la ruta temporal del archivo a subir
         const filePath = Array.isArray(archivoRecibido) ? archivoRecibido[0].filepath : archivoRecibido.filepath; //ruta local
 
-        //Para que valide imagenes, videos, archivos genéricos
+        //Para que valide imagenes, videos, archivos genéricos (nombre del archivo con su extensión)
         const filename = archivoRecibido[0].originalFilename.toLowerCase(); // nombre archivo en minúsculas para evitar problemas con mayúsculas
         let resourceType = 'raw';
 
@@ -93,9 +98,9 @@ const server = http.createServer((req, res) => {
         try {
           //Se subirá a cloudinary -> Se obtendrá la url del archivo
           const uploadResult = await cloudinary.uploader.upload(filePath, {
-            folder: 'chat-files',
-            resource_type: resourceType,
-            public_id: filename
+            folder: 'chat-files', //Se crea una carpeta chat-files en cloudinary
+            resource_type: resourceType, //Se agrega el recurso
+            public_id: filename //nombre personalizado en la url
           });
           res.writeHead(200, { 'Content-Type': 'application/json' });
           //Se envía la url del archivo de regreso
@@ -107,7 +112,6 @@ const server = http.createServer((req, res) => {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Failed to upload image to Cloudinary.' }));
         }
-
       } else {
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Endpoint not found.' }));
@@ -117,8 +121,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  //Va a recorrer cada MIMETIPE
-  let filePath = `.${parsedUrl}`;
+  //Va a recorrer cada identificador de archivo (MIME Type)
+  let filePath = `.${parsedUrl}`; //La ruta actual será filePath
   if (filePath === "./") {
     filePath = "./usuario.html";
   }
@@ -141,7 +145,7 @@ const server = http.createServer((req, res) => {
 
   const contentType = mimeTypes[ext] || 'application/octet-stream';
 
-  //Leer los archivos de la ruta mostrada
+  //Leer la ruta y devolver ese archivo para que el navegador lo muestre
   fs.readFile(filePath, (err, content) => {
     if (err) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -153,7 +157,7 @@ const server = http.createServer((req, res) => {
 }); //Fin de la creación del servidor NodeJS
 
 //Configurar Socket
-const io = new Server(server);
+const io = new Server(server); //El servidor creado de node.js se va a conectar con Socket.io
 
 const usuariosConectados = new Map();
 
@@ -194,9 +198,9 @@ io.on('connection', socket => {
   socket.on('escribiendo', (nombre) => {
     socket.broadcast.emit('mostrar escribiendo', nombre);
   });
-});
-//Fin del configurar Socket
+}); //Fin del configurar Socket
 
+//El servidor node.js escucha al puerto 3000
 server.listen(3000, () => {
   console.log('Servidor escuchando en http://localhost:3000');
 });

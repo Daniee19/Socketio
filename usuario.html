@@ -26,7 +26,7 @@
     <div class="input-field">
       <input type="file" id="archivo" accept=".jpg, .png" />
     </div>
-    <button onclick="enviar_nombre()" type="submit">Iniciar Chat</button>
+    <button class="btn_enviar_nombre" onclick="enviar_nombre()" type="submit">Iniciar Chat</button>
   </div>
 </body>
 
@@ -47,23 +47,27 @@
   });
 
   async function enviar_nombre() {
+    const btn = document.querySelector(".btn_enviar_nombre");
+    //Se desactiva el boton para evitar enviar flujos repetidos
+    btn.disabled = true;
     let nombre = document.getElementById("nombre").value.trim();
-    let archivo = document.getElementById("archivo").files[0];
-
+    let archivo = document.getElementById("archivo").files[0]; //Obtenemos el formato de un archivo
+    console.log("El archivo es: ", archivo);
     localStorage.setItem("nombre", nombre);
 
     if (archivo) {
       const formData = new FormData();
+      //Se agrega el archivo con la clave avatar
       formData.append("avatar", archivo);
-
       console.log("Subiendo avatar:", archivo.name);
 
       try {
+
         const response = await fetch("/api/upload-image", {
           method: "POST",
           body: formData,
         });
-
+        btn.disabled = false;
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(
@@ -88,6 +92,7 @@
         return;
       }
     } else {
+      btn.disabled = false;
       localStorage.removeItem("avatar");
       //Si no hay archivo solo redirige
       window.location.href =

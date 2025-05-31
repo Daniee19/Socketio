@@ -1,62 +1,53 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Chat con Socket.IO</title>
-    <link rel="stylesheet" href="styleChat.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
-  </head>
-  <!-- ELENA -->
-  <body>
-    <div class="logo-container">
-      <img src="imagen2.png" alt="LieCake Logo" />
-    </div>
-    <a href="#" class="back-button" onclick="regresar(event)">
-      <i class="fas fa-arrow-left"></i>
-      <!-- Icono de flecha hacia atrás -->
-      <span>Volver</span>
-    </a>
 
-    <!-- Contenedor del chat -->
-    <div class="chat-container">
-      <div class="chat-header">LieCake Chat</div>
-      <div class="chat-box" id="chatBox">
-        <ul id="mensajes"></ul>
-        <div
-          id="escribiendo"
-          class="typing-indicator"
-          style="color: gray; font-style: italic; margin: 5px 0"></div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat con Socket.IO</title>
+  <link rel="stylesheet" href="styleChat.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+</head>
+<!-- ELENA -->
+
+<body>
+  <div class="logo-container">
+    <img src="imagen2.png" alt="LieCake Logo" />
+  </div>
+  <a href="#" class="back-button" onclick="regresar(event)">
+    <i class="fas fa-arrow-left"></i>
+    <!-- Icono de flecha hacia atrás -->
+    <span>Volver</span>
+  </a>
+
+  <!-- Contenedor del chat -->
+  <div class="chat-container">
+    <div class="chat-header">LieCake Chat</div>
+    <div class="chat-box" id="chatBox">
+      <ul id="mensajes"></ul>
+      <div id="escribiendo" class="typing-indicator" style="color: gray; font-style: italic; margin: 5px 0"></div>
+    </div>
+    <!-- Opciones para envio de mensaje -->
+    <div class="display:flex; flex-direction:column;">
+      <div class="chat-input">
+        <input type="text" id="mensaje" placeholder="Escribe un mensaje..." autocomplete="off" />
+        <button id="btnEmoji">😀</button>
+        <button id="btnEnviar">Enviar</button>
       </div>
-      <!-- Opciones para envio de mensaje -->
-      <div class="display:flex; flex-direction:column;">
-        <div class="chat-input">
-          <input
-            type="text"
-            id="mensaje"
-            placeholder="Escribe un mensaje..."
-            autocomplete="off" />
-          <button id="btnEmoji">😀</button>
-          <button id="btnEnviar">Enviar</button>
-        </div>
+    </div>
+    <!-- Opciones para seleccionar archivos -->
+    <div class="archivo">
+      <label for="archivoFile" class="botonArchivo">
+        Seleccionar Archivo
+      </label>
+      <div>
+        <input id="archivoFile" type="file" />
+        <span id="nombre-archivo">Ningún archivo seleccionado</span>
       </div>
-      <!-- Opciones para seleccionar archivos -->
-      <div class="archivo">
-        <label for="archivoFile" class="botonArchivo">
-          Seleccionar Archivo
-        </label>
-        <div>
-          <input id="archivoFile" type="file" />
-          <span id="nombre-archivo">Ningún archivo seleccionado</span>
-        </div>
-        <div>
-            <emoji-picker id="emojiPicker"
-                style="display:none; position: absolute; bottom: 120px; right: 30px;"></emoji-picker>
-        </div>
+      <div>
+        <emoji-picker id="emojiPicker"
+          style="display:none; position: absolute; bottom: 120px; right: 30px;"></emoji-picker>
+      </div>
     </div>
 
     <!-- script para mostrar el nombre del archivo -->
@@ -167,21 +158,21 @@
         mensajeContenido.className = "mensaje-contenido";
         horaElemento.className = "mensaje-hora";
         mensajeContenido.textContent = esUsuario
-        ? "Tu: " + data.mensaje
-        : data.nombre + ": " + data.mensaje;
+          ? "Tu: " + data.mensaje
+          : data.nombre + ": " + data.mensaje;
         horaElemento.textContent = data.hora || "??:??";
 
         // Si es del usuario, agrega la clase container-message y organiza los elementos de manera diferente
         if (esUsuario) {
-            container_message.className = "container-message";
-            container_message.appendChild(avatarImg);
-            container_message.appendChild(mensajeContenido);
-            div.appendChild(container_message);
-            div.appendChild(horaElemento);
+          container_message.className = "container-message";
+          container_message.appendChild(avatarImg);
+          container_message.appendChild(mensajeContenido);
+          div.appendChild(container_message);
+          div.appendChild(horaElemento);
         } else {
-            div.appendChild(avatarImg);
-            div.appendChild(mensajeContenido);
-            div.appendChild(horaElemento);
+          div.appendChild(avatarImg);
+          div.appendChild(mensajeContenido);
+          div.appendChild(horaElemento);
         }
         document.getElementById("mensajes").appendChild(item).appendChild(div);
       });
@@ -190,8 +181,9 @@
       async function enviar() {
         // Verifica si hay algun archivo seleccionado
         let archivo_file = document.getElementById("archivoFile").files[0];
-        console.log("El archivo_file es: ", archivo_file);
+
         if (archivo_file) {
+          console.log("El archivo_file es: ", archivo_file);
           const reader = new FileReader();
           reader.onload = async function (e) {
             try {
@@ -232,7 +224,7 @@
               console.error("Error al subir el archivo:", error);
               alert(
                 "Hubo un error al subir el archivo. Inténtalo de nuevo. Detalle: " +
-                  error.message
+                error.message
               );
               return;
             }
@@ -329,5 +321,6 @@
         inputMensaje.focus();
       });
     </script>
-  </body>
+</body>
+
 </html>
